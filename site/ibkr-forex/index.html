@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IBKR 换汇枢纽 — 理财笔记</title>
+<meta name="description" content="Robinhood → HSBC US → IBKR → HSBC HK 全链路仅需 $2，银行间汇率 + 固定手续费干翻零售银行 30-300 倍差价">
+<style>
+/* tianlizeng.cloud 站群统一站内样式 (SSOT)
+ * 来源：~/Dev/devtools/lib/templates/site-content.css
+ * 编辑这里 → /site-content-refresh 同步到所有消费者站
+ * 视觉对标：services 页 (~/Dev/website/components/service-dashboard.tsx)
+ */
+
+/* ===== 页面骨架 ===== */
+body.tlz-page {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin: 0;
+}
+
+.tlz-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+@media (min-width: 768px) {
+  .tlz-container { padding: 0 32px 48px; }
+}
+
+/* ===== Stats bar（统计条，site-header 之下）===== */
+.tlz-stats-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 16px;
+  margin: 24px 0 32px;
+  font-size: 14px; color: #86868b;
+}
+.tlz-stats-bar > * { display: inline-flex; align-items: center; gap: 6px; }
+.tlz-stats-bar strong { color: #1d1d1f; font-weight: 500; }
+
+/* ===== Search box ===== */
+.tlz-search-wrap {
+  position: relative;
+  width: 100%; max-width: 448px;
+  margin: 0 auto 32px;
+}
+.tlz-search {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 16px 10px 40px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px;
+  font: 14px/1.4 inherit;
+  color: #1d1d1f; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tlz-search:focus {
+  border-color: rgba(0,113,227,0.3);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.20);
+}
+.tlz-search::placeholder { color: rgba(134,134,139,0.6); }
+
+/* ===== Filter buttons ===== */
+.tlz-filters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.tlz-btn {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 999px;
+  font: 13px/1 inherit; color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tlz-btn:hover { background: rgba(255,255,255,0.7); color: #1d1d1f; }
+.tlz-btn.active { background: #1f2328; color: #fff; border-color: #1f2328; }
+
+/* ===== Section（一个分组）===== */
+.tlz-section { margin-bottom: 40px; }
+.tlz-section-title {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+  font-size: 18px; font-weight: 600; color: #1d1d1f;
+}
+.tlz-section-title .tlz-icon { font-size: 20px; line-height: 1; }
+.tlz-section-title .tlz-count { font-size: 12px; color: #86868b; font-weight: 400; margin-left: 4px; }
+
+/* ===== Grid ===== */
+.tlz-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+@media (min-width: 768px) {
+  .tlz-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== Card（玻璃卡片，所有 list item 都用这个）===== */
+.tlz-card {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-decoration: none; color: inherit;
+  transition: all 0.2s;
+}
+.tlz-card:hover {
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.tlz-card-body { min-width: 0; flex: 1; }
+.tlz-card-header { display: flex; align-items: center; gap: 8px; }
+.tlz-card-name {
+  font-size: 14px; font-weight: 500; color: #1d1d1f;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tlz-card-meta {
+  font-size: 10px; color: #86868b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  flex-shrink: 0;
+}
+.tlz-card-desc {
+  font-size: 12px; color: #86868b;
+  margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tlz-card-tail { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Card 行式变体（logs 时间线用）*/
+.tlz-card--row .tlz-card-body { display: grid; grid-template-columns: 100px 1fr; gap: 12px; align-items: baseline; }
+.tlz-card--row .tlz-card-meta { font-size: 12px; }
+
+/* ===== Status dot ===== */
+.tlz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.tlz-dot--ok { background: #34c759; }
+.tlz-dot--bad { background: #ff3b30; }
+.tlz-dot--warn { background: #ff9500; }
+.tlz-dot--unknown { background: #d2d2d7; }
+
+/* ===== Tag chip ===== */
+.tlz-tag {
+  display: inline-block;
+  background: rgba(0,0,0,0.06); color: #495057;
+  font-size: 10px; font-weight: 500;
+  padding: 1px 7px; border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* ===== Lock icon (CF Access 标识) ===== */
+.tlz-lock {
+  display: inline-block; width: 12px; height: 12px;
+  vertical-align: middle; opacity: 0.5;
+}
+
+/* ===== Footer ===== */
+.tlz-footer {
+  text-align: center; color: #86868b; font-size: 12px;
+  margin-top: 48px; padding: 24px 0;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.tlz-footer a { color: #0071e3; text-decoration: none; }
+.tlz-footer a:hover { text-decoration: underline; }
+
+/* ===== Hidden helper ===== */
+.tlz-hidden { display: none !important; }
+
+
+:root{--bg:#f5f5f7;--card:#fff;--border:#e5e7eb;--text:#1f2328;--muted:#6b7280;--accent:#0071E3;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',Helvetica,Arial,sans-serif;min-height:100vh;}
+.tlz-container{max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
+a{color:var(--accent);}
+
+
+.article{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px 44px;margin-top:18px;}
+.article .back{display:inline-block;color:var(--muted);font-size:13px;text-decoration:none;margin-bottom:20px;}
+.article .back:hover{color:var(--accent);}
+.article .meta-row{color:var(--muted);font-size:12px;margin-bottom:24px;display:flex;gap:12px;flex-wrap:wrap;}
+.article .meta-row .group-chip{background:#eef0f2;color:var(--c);padding:1px 8px;border-radius:10px;font-weight:600;font-size:11px;}
+.article h1{font-size:26px;font-weight:700;letter-spacing:-0.02em;color:#1f2328;margin:0 0 14px;line-height:1.3;}
+.article h2{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:28px 0 10px;color:#1f2328;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.article h3{font-size:16px;font-weight:600;margin:20px 0 8px;color:#1f2328;}
+.article h4{font-size:14px;font-weight:600;margin:14px 0 6px;color:#374151;}
+.article p{margin:10px 0;}
+.article ul,.article ol{margin:8px 0 12px 22px;}
+.article li{margin:3px 0;}
+.article code{background:#f1f3f5;color:#d6336c;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px;padding:1px 5px;border-radius:4px;}
+.article pre{background:#0d1117;color:#e6edf3;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.5;margin:12px 0;}
+.article pre code{background:transparent;color:inherit;padding:0;font-size:13px;}
+.article blockquote{border-left:3px solid #d1d5db;padding:4px 14px;margin:12px 0;color:#4b5563;background:#f9fafb;border-radius:0 6px 6px 0;}
+.article blockquote p{margin:4px 0;}
+.article table{border-collapse:collapse;margin:14px 0;font-size:13.5px;display:block;overflow-x:auto;max-width:100%;}
+.article table thead{background:#f9fafb;}
+.article th,.article td{border:1px solid var(--border);padding:8px 12px;text-align:left;}
+.article th{font-weight:600;color:#1f2328;}
+.article tr:nth-child(even) td{background:#fafbfc;}
+.article hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
+.article a{color:var(--accent);}
+.article img{max-width:100%;border-radius:8px;margin:12px 0;}
+@media(max-width:640px){.article{padding:24px 20px;}.article h1{font-size:22px;}}
+
+:root { --c: #0071E3; }
+</style>
+</head>
+<body>
+<style>
+  /* ============================================================
+     Mega Menu · HSBC-style unified light (R7.2)
+     - Brand bar 64px · 单色浅灰 panel 全 4 列等宽
+     - hover 触发 · 150ms 延迟关闭 · display:none 默认严格隐藏
+     - html/body overflow-x:hidden 防横滚兜底
+  ============================================================ */
+
+  :root {
+    --tlz-bg-panel:       #F5F5F5;
+    --tlz-text-primary:   #111111;
+    --tlz-text-secondary: #333333;
+    --tlz-border-subtle:  #E5E5E5;
+    --tlz-border-divider: #E0E0E0;
+    --tlz-badge-border:   #BFBFBF;
+    --tlz-badge-text:     #6B7177;
+    --tlz-accent:         #D40000;
+  }
+
+  html, body { overflow-x: hidden; }
+  body { padding-top: 64px !important; }
+
+  .tlz-nav-stack {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    font: 400 15px/1 -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  }
+
+  /* ===== Brand bar ===== */
+  .tlz-nav {
+    height: 64px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--tlz-border-subtle);
+    display: flex; align-items: center;
+  }
+  .tlz-nav-inner {
+    max-width: 1280px; width: 100%; margin: 0 auto;
+    padding: 0 24px; display: flex; align-items: center;
+    min-width: 0;
+  }
+  .tlz-nav-brand {
+    font-weight: 500; font-size: 18px; color: #000;
+    text-decoration: none; transition: color 0.12s;
+    flex-shrink: 0;
+  }
+  .tlz-nav-brand:hover { color: var(--tlz-accent); }
+  .tlz-nav-sep { width: 1px; height: 32px; background: var(--tlz-border-subtle); margin: 0 24px; flex-shrink: 0; }
+
+  .tlz-nav-triggers { display: flex; align-items: center; gap: 32px; flex: 1; min-width: 0; }
+  .tlz-nav .mega-trigger {
+    background: transparent; border: 0;
+    font: inherit; font-size: 15px; font-weight: 400;
+    color: var(--tlz-text-secondary);
+    padding: 8px 0; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: color 0.12s; white-space: nowrap;
+  }
+  .tlz-nav .mega-trigger::after {
+    content: "\25be"; font-size: 12px; opacity: 0.6;
+    transition: transform 0.18s ease-out;
+  }
+  .tlz-nav .mega-trigger:hover { color: #000; }
+  .tlz-nav .mega-trigger[aria-expanded="true"] { color: #000; font-weight: 500; }
+  .tlz-nav .mega-trigger[aria-expanded="true"]::after { transform: rotate(180deg); }
+  .tlz-nav .mega-trigger.current { color: #000; font-weight: 500; }
+
+  /* ===== Mega Panel · 默认完全隐藏 ===== */
+  .tlz-mega-panel {
+    position: fixed; top: 64px; left: 0; right: 0;
+    background: var(--tlz-bg-panel);
+    display: none;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    box-shadow: 0 8px 16px -8px rgba(0,0,0,0.08);
+  }
+  .tlz-mega-panel[data-open="true"] { display: block; }
+
+  /* 内部 max-width 1280px 居中 · 4 列等宽 */
+  .tlz-mega-inner {
+    max-width: 1280px; width: 100%;
+    margin: 0 auto;
+    padding: 40px 48px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    min-height: 320px;
+  }
+
+  .tlz-mega-col {
+    padding: 0 24px;
+    border-right: 1px solid var(--tlz-border-divider);
+    min-width: 0;
+  }
+  .tlz-mega-col:first-child { padding-left: 0; }
+  .tlz-mega-col:last-child { border-right: 0; padding-right: 0; }
+
+  /* Group */
+  .tlz-mega-group { margin-bottom: 24px; }
+  .tlz-mega-group:last-child { margin-bottom: 0; }
+  .tlz-mega-group h3 {
+    font-size: 15px; font-weight: 600; color: var(--tlz-text-primary);
+    margin: 0 0 12px;
+  }
+  .tlz-mega-group ul { list-style: none; padding: 0; margin: 0; }
+  .tlz-mega-group a {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--tlz-text-secondary); text-decoration: none;
+    font-size: 14px; font-weight: 400; line-height: 28px;
+    transition: color 0.12s;
+  }
+  .tlz-mega-group a:hover { color: var(--tlz-accent); }
+
+  /* CF badge（统一浅灰规格） */
+  .tlz-mega-group .cf-badge {
+    height: 18px; padding: 0 6px;
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.05em;
+    color: var(--tlz-badge-text);
+    background: transparent;
+    border: 1px solid var(--tlz-badge-border);
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Hamburger */
+  .tlz-nav-hamburger {
+    display: none; background: transparent; border: 0;
+    color: var(--tlz-text-secondary); padding: 8px; margin-left: auto;
+    cursor: pointer; font-size: 20px;
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 1023px) {
+    .tlz-mega-inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding: 32px 24px;
+    }
+    .tlz-mega-col:nth-child(2n) { border-right: 0; padding-right: 0; }
+    .tlz-mega-col:nth-child(n+3) {
+      padding-top: 24px; margin-top: 24px;
+      border-top: 1px solid var(--tlz-border-divider);
+    }
+    .tlz-mega-col:nth-child(3) { padding-left: 0; }
+  }
+
+  @media (max-width: 768px) {
+    body { padding-top: 56px !important; }
+    .tlz-nav { height: 56px; }
+    .tlz-nav-inner { padding: 0 16px; }
+    .tlz-nav-sep { display: none; }
+    .tlz-nav-triggers { display: none; }
+    .tlz-nav-hamburger { display: inline-flex; }
+
+    .tlz-nav-stack[data-mobile-open="true"] .tlz-nav-triggers {
+      display: flex; flex-direction: column; align-items: stretch;
+      position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+      background: #FFFFFF;
+      padding: 0; gap: 0; overflow-y: auto; z-index: 10000;
+    }
+    .tlz-nav-stack[data-mobile-open="true"] .mega-trigger {
+      width: 100%; justify-content: space-between;
+      padding: 16px 20px; border-radius: 0;
+      border-bottom: 1px solid var(--tlz-border-subtle);
+      font-size: 16px;
+    }
+
+    .tlz-mega-panel {
+      top: 56px; max-height: calc(100vh - 56px);
+      position: static; box-shadow: none;
+    }
+    .tlz-mega-inner {
+      grid-template-columns: 1fr;
+      padding: 16px 20px;
+    }
+    .tlz-mega-col {
+      padding: 0 !important;
+      border-right: 0 !important;
+      border-top: 0 !important;
+      margin-top: 16px !important;
+    }
+    .tlz-mega-col:first-child { margin-top: 0 !important; }
+  }
+</style>
+<div class="tlz-nav-stack" data-mobile-open="false">
+<nav class="tlz-nav" aria-label="站群导航"><div class="tlz-nav-inner">
+  <a class="tlz-nav-brand" href="https://tianlizeng.cloud/" data-site="home">曾田力</a>
+  <div class="tlz-nav-sep" aria-hidden="true"></div>
+  <div class="tlz-nav-triggers" role="menubar">
+    <button class="mega-trigger" data-cat="home" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="mega-panel-home">主站</button>
+    <button class="mega-trigger" data-cat="hydro" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="mega-panel-hydro">水利</button>
+    <button class="mega-trigger" data-cat="dev" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="mega-panel-dev">开发</button>
+    <button class="mega-trigger" data-cat="content" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="mega-panel-content">内容</button>
+    <button class="mega-trigger" data-cat="infra" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="mega-panel-infra">基础设施</button>
+  </div>
+  <button class="tlz-nav-hamburger" aria-label="菜单" aria-expanded="false" data-toggle="mobile">☰</button>
+</div></nav>
+<div class="tlz-mega-panel" data-for="home" id="mega-panel-home" role="menu" aria-label="主站" data-open="false">
+  <div class="tlz-mega-inner">
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>关于</h3>
+        <ul>
+          <li><a href="https://tianlizeng.cloud/about" role="menuitem"><span>关于我</span></a></li>
+          <li><a href="https://tianlizeng.cloud/projects" role="menuitem"><span>作品</span></a></li>
+          <li><a href="https://tianlizeng.cloud/research" role="menuitem"><span>研究</span></a></li>
+          <li><a href="https://tianlizeng.cloud/blog" role="menuitem"><span>博客</span></a></li>
+          <li><a href="https://tianlizeng.cloud/life" role="menuitem"><span>生活</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>入口</h3>
+        <ul>
+          <li><a href="https://tianlizeng.cloud/services" role="menuitem"><span>服务总览</span></a></li>
+          <li><a href="https://stack.tianlizeng.cloud" role="menuitem"><span>Stack</span></a></li>
+          <li><a href="https://cmds.tianlizeng.cloud" role="menuitem"><span>CC Docs</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://dashboard.tianlizeng.cloud" role="menuitem"><span>Dashboard</span></a></li>
+          <li><a href="https://logs.tianlizeng.cloud" role="menuitem"><span>Logs</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://tianlizeng.cloud/search" role="menuitem"><span>搜索</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+  </div>
+</div>
+<div class="tlz-mega-panel" data-for="hydro" id="mega-panel-hydro" role="menu" aria-label="水利" data-open="false">
+  <div class="tlz-mega-inner">
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>主平台</h3>
+        <ul>
+          <li><a href="https://hydro.tianlizeng.cloud" role="menuitem"><span>Hydro Toolkit</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>水资源/调度</h3>
+        <ul>
+          <li><a href="https://hydro-annual.tianlizeng.cloud" role="menuitem"><span>水资源年报</span></a></li>
+          <li><a href="https://hydro-reservoir.tianlizeng.cloud" role="menuitem"><span>水库群调度</span></a></li>
+          <li><a href="https://hydro-district.tianlizeng.cloud" role="menuitem"><span>河区调度</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>评估/编码</h3>
+        <ul>
+          <li><a href="https://hydro-efficiency.tianlizeng.cloud" role="menuitem"><span>水效评估</span></a></li>
+          <li><a href="https://hydro-geocode.tianlizeng.cloud" role="menuitem"><span>地理编码</span></a></li>
+          <li><a href="https://hydro-capacity.tianlizeng.cloud" role="menuitem"><span>纳污能力</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>风险/降雨</h3>
+        <ul>
+          <li><a href="https://hydro-risk.tianlizeng.cloud" role="menuitem"><span>风险图数据</span></a></li>
+          <li><a href="https://hydro-rainfall.tianlizeng.cloud" role="menuitem"><span>降雨径流</span></a></li>
+          <li><a href="https://hydro-irrigation.tianlizeng.cloud" role="menuitem"><span>灌溉需水</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tlz-mega-panel" data-for="dev" id="mega-panel-dev" role="menu" aria-label="开发" data-open="false">
+  <div class="tlz-mega-inner">
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>子域服务</h3>
+        <ul>
+          <li><a href="https://dashboard.tianlizeng.cloud" role="menuitem"><span>Repo Dashboard</span></a></li>
+          <li><a href="https://cclog.tianlizeng.cloud" role="menuitem"><span>CC 会话日志</span></a></li>
+          <li><a href="https://logs.tianlizeng.cloud" role="menuitem"><span>Logs</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://dockit.tianlizeng.cloud" role="menuitem"><span>Dockit</span></a></li>
+          <li><a href="https://stack.tianlizeng.cloud" role="menuitem"><span>Stack</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://cmds.tianlizeng.cloud" role="menuitem"><span>CC Docs</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://playbooks.tianlizeng.cloud" role="menuitem"><span>Playbooks</span><span class="cf-badge">CF</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>工具库</h3>
+        <ul>
+          <li><a href="https://github.com/zengtianli/cc-configs" role="menuitem"><span>cc-configs</span></a></li>
+          <li><a href="https://github.com/zengtianli/devtools" role="menuitem"><span>devtools</span></a></li>
+          <li><a href="https://github.com/zengtianli/doctools" role="menuitem"><span>doctools</span></a></li>
+          <li><a href="https://github.com/zengtianli/mactools" role="menuitem"><span>mactools</span></a></li>
+          <li><a href="https://github.com/zengtianli/clashx" role="menuitem"><span>clashx</span></a></li>
+          <li><a href="https://github.com/zengtianli/hydro-apps" role="menuitem"><span>hydro-apps</span></a></li>
+          <li><a href="https://github.com/zengtianli/hydro-qgis" role="menuitem"><span>hydro-qgis</span></a></li>
+          <li><a href="https://github.com/zengtianli/downloads-organizer" role="menuitem"><span>downloads-organizer</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>Raycast / 配置</h3>
+        <ul>
+          <li><a href="https://github.com/zengtianli/dockit-raycast" role="menuitem"><span>dockit-raycast</span></a></li>
+          <li><a href="https://github.com/zengtianli/raycast" role="menuitem"><span>raycast</span></a></li>
+          <li><a href="https://github.com/zengtianli/configs" role="menuitem"><span>configs</span></a></li>
+          <li><a href="https://github.com/zengtianli/dotfiles" role="menuitem"><span>dotfiles</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+  </div>
+</div>
+<div class="tlz-mega-panel" data-for="content" id="mega-panel-content" role="menu" aria-label="内容" data-open="false">
+  <div class="tlz-mega-inner">
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>日志 / 知识</h3>
+        <ul>
+          <li><a href="https://logs.tianlizeng.cloud" role="menuitem"><span>Logs</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://docs.tianlizeng.cloud" role="menuitem"><span>知识库</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://audiobook.tianlizeng.cloud" role="menuitem"><span>有声书</span></a></li>
+          <li><a href="https://cclog.tianlizeng.cloud" role="menuitem"><span>CC 会话</span></a></li>
+          <li><a href="https://playbooks.tianlizeng.cloud" role="menuitem"><span>Playbooks</span><span class="cf-badge">CF</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>投资</h3>
+        <ul>
+          <li><a href="https://assets.tianlizeng.cloud" role="menuitem"><span>理财笔记</span></a></li>
+          <li><a href="https://cc-options.tianlizeng.cloud" role="menuitem"><span>QQQ CC Dashboard</span><span class="cf-badge">CF</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+  </div>
+</div>
+<div class="tlz-mega-panel" data-for="infra" id="mega-panel-infra" role="menu" aria-label="基础设施" data-open="false">
+  <div class="tlz-mega-inner">
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>监控 / 自动化</h3>
+        <ul>
+          <li><a href="https://status.tianlizeng.cloud" role="menuitem"><span>Uptime Kuma</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://n8n.tianlizeng.cloud" role="menuitem"><span>n8n</span><span class="cf-badge">CF</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>代理</h3>
+        <ul>
+          <li><a href="https://proxy.tianlizeng.cloud" role="menuitem"><span>OAuth Proxy</span><span class="cf-badge">CF</span></a></li>
+          <li><a href="https://panel.tianlizeng.cloud" role="menuitem"><span>Marzban</span></a></li>
+          <li><a href="https://sub.tianlizeng.cloud" role="menuitem"><span>Marzban 订阅</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+      <div class="tlz-mega-group">
+        <h3>WEBHOOK</h3>
+        <ul>
+          <li><a href="https://webhook.tianlizeng.cloud" role="menuitem"><span>Webhook</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="tlz-mega-col">
+    </div>
+  </div>
+</div>
+</div>
+<script>(function(){
+  var stack=document.querySelector('.tlz-nav-stack');
+  if(!stack)return;
+  var triggers=stack.querySelectorAll('.mega-trigger');
+  var panels=stack.querySelectorAll('.tlz-mega-panel');
+  var hamburger=stack.querySelector('.tlz-nav-hamburger');
+  var activeKey=null,hideTimer=null;
+  function hideAll(){
+    panels.forEach(function(p){p.setAttribute('data-open','false');});
+    triggers.forEach(function(t){t.setAttribute('aria-expanded','false');});
+    activeKey=null;
+  }
+  function show(k){
+    if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
+    if(activeKey===k)return;
+    hideAll();
+    var t=stack.querySelector('.mega-trigger[data-cat="'+k+'"]');
+    var p=stack.querySelector('.tlz-mega-panel[data-for="'+k+'"]');
+    if(!t||!p)return;
+    t.setAttribute('aria-expanded','true');
+    p.setAttribute('data-open','true');
+    activeKey=k;
+  }
+  function schedHide(){if(hideTimer)clearTimeout(hideTimer);hideTimer=setTimeout(hideAll,160);}
+  triggers.forEach(function(t){
+    var k=t.getAttribute('data-cat');
+    t.addEventListener('mouseenter',function(){show(k);});
+    t.addEventListener('click',function(e){e.preventDefault();if(activeKey===k)hideAll();else show(k);});
+    t.addEventListener('mouseleave',schedHide);
+  });
+  panels.forEach(function(p){
+    p.addEventListener('mouseenter',function(){if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}});
+    p.addEventListener('mouseleave',schedHide);
+  });
+  document.addEventListener('click',function(e){if(!stack.contains(e.target))hideAll();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')hideAll();});
+  if(hamburger){
+    hamburger.addEventListener('click',function(){
+      var open=stack.getAttribute('data-mobile-open')==='true';
+      stack.setAttribute('data-mobile-open',open?'false':'true');
+      hamburger.setAttribute('aria-expanded',open?'false':'true');
+      if(open)hideAll();
+    });
+  }
+  // current highlight
+  var host=location.hostname;
+  var noCur=["hammerspoon.tianlizeng.cloud", "audiobook.tianlizeng.cloud", "auggie.tianlizeng.cloud", "proxy.tianlizeng.cloud"];
+  var hostMap={"stack.tianlizeng.cloud": "home", "cmds.tianlizeng.cloud": "home", "dashboard.tianlizeng.cloud": "dev", "logs.tianlizeng.cloud": "content", "docs.tianlizeng.cloud": "content", "audiobook.tianlizeng.cloud": "content", "cclog.tianlizeng.cloud": "content", "playbooks.tianlizeng.cloud": "content", "cc-options.tianlizeng.cloud": "content", "assets.tianlizeng.cloud": "content", "status.tianlizeng.cloud": "infra", "n8n.tianlizeng.cloud": "infra", "panel.tianlizeng.cloud": "infra", "sub.tianlizeng.cloud": "infra", "webhook.tianlizeng.cloud": "infra"};
+  var curKey=null;
+  if(noCur.indexOf(host)===-1){
+    curKey=hostMap[host]||null;
+    if(!curKey && (host==='hydro.tianlizeng.cloud' || host.indexOf('hydro-')===0)) curKey='hydro';
+    if(!curKey && host==='tianlizeng.cloud') curKey='home';
+  }
+  if(curKey){
+    var t=stack.querySelector('.mega-trigger[data-cat="'+curKey+'"]');
+    if(t)t.classList.add('current');
+  }
+})();</script>
+
+<style>
+  .tlz-site-header {
+    max-width: 1100px; margin: 0 auto; padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font: 400 14px/1.5 -apple-system, BlinkMacSystemFont, 'PingFang SC', Helvetica, sans-serif;
+  }
+  .tlz-site-header .tlz-crumb {
+    font-size: 12px; color: #86868b; margin-bottom: 6px;
+  }
+  .tlz-site-header .tlz-crumb a {
+    color: #86868b; text-decoration: none;
+  }
+  .tlz-site-header .tlz-crumb a:hover { color: #0071E3; }
+  .tlz-site-header h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+    color: #1f2328; margin: 0;
+  }
+  .tlz-site-header h1 .tlz-icon { margin-right: 8px; }
+  .tlz-site-header .tlz-tagline {
+    font-size: 13px; color: #6b7280; margin: 4px 0 0;
+  }
+</style>
+<header class="tlz-site-header">
+  <div class="tlz-crumb"><a href="https://tianlizeng.cloud/">tianlizeng.cloud</a> / <a href="https://tianlizeng.cloud/services">Services</a> / <span>理财笔记</span></div>
+  <h1><span class="tlz-icon">💰</span>理财笔记</h1>
+  <p class="tlz-tagline">国际资产配置 · 换汇 / 投资 / 香港银行 / 策略分析</p>
+</header>
+
+<div class="tlz-container">
+<article class="article">
+<a class="back" href="../">← 返回首页</a>
+<div class="meta-row">
+  <span class="group-chip">💱 换汇</span>
+  <span>更新 2026-04-11</span>
+</div>
+<h1 id="ibkr">IBKR 盈透证券 — 换汇枢纽</h1>
+<blockquote>
+<p>数据来源：2026-03 调研，含 Web 实时搜索验证</p>
+</blockquote>
+<hr>
+<h2 id="ibkr_1">一、IBKR 在资产链路中的角色</h2>
+<p>IBKR（Interactive Brokers）不是用来做股票交易的，而是充当<strong>换汇枢纽</strong> — 利用银行间汇率实现近零成本的 USD→CNH/HKD 转换。</p>
+<h3 id="2">最终确认的全链路（全程仅 $2）</h3>
+<pre><code>Robinhood (USD)
+    ↓ ACH 免费（3-5 工作日）
+HSBC US (USD)
+    ↓ Domestic Wire 免费（Premier 专属）、当天/次日到账、无冻结期
+IBKR US (USD)
+    ↓ 换汇 USD→CNH（银行间汇率，$2 手续费，损耗 0.002%）
+IBKR US (CNH)
+    ↓ SWIFT 提取（每月首次免费）
+HSBC HK (RMB 储蓄账户)
+    ↓ AutoPay 还款
+HSBC Pulse 银联双币卡（RMB 子账户）
+    ↓ Reward+ 扫码 / Apple Pay
+国内消费（4.4% 返现）
+</code></pre>
+<p><strong>全程唯一成本：IBKR 换汇 $2。损耗率 &lt; 0.005%。</strong></p>
+<hr>
+<h2 id="ibkr-us">二、IBKR US 账户能力</h2>
+<h3 id="21">2.1 多币种账户</h3>
+<p>IBKR US (IBKR LLC) 本身就是多币种账户，<strong>不需要开 IBKR HK</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>货币</th>
+<th>支持</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>USD</strong></td>
+<td>✅</td>
+<td>基础货币</td>
+</tr>
+<tr>
+<td><strong>HKD</strong></td>
+<td>✅</td>
+<td>完全支持，USD/HKD 价差极小（港币挂钩美元）</td>
+</tr>
+<tr>
+<td><strong>CNH（离岸人民币）</strong></td>
+<td>✅</td>
+<td>完全支持，可交易和提现</td>
+</tr>
+<tr>
+<td>EUR、GBP、JPY 等</td>
+<td>✅</td>
+<td>20+ 种主要货币</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22">2.2 换汇成本（核心优势）</h3>
+<table>
+<thead>
+<tr>
+<th>金额</th>
+<th>IBKR 手续费</th>
+<th>对比银行</th>
+<th>对比 Moomoo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$10,000</td>
+<td><strong>$2</strong></td>
+<td>$30-300（0.3-3%）</td>
+<td><strong>$300</strong>（3%）</td>
+</tr>
+<tr>
+<td>$50,000</td>
+<td><strong>$2</strong></td>
+<td>$150-1,500</td>
+<td>$1,500</td>
+</tr>
+<tr>
+<td>$100,000</td>
+<td><strong>$2</strong></td>
+<td>$300-3,000</td>
+<td>$3,000</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>IBKR 用的是<strong>银行间汇率</strong>（interbank rate），与 Bloomberg/Reuters 实时报价一致。银行/券商的"免手续费换汇"实际上在汇率中加了 0.3-3% 的 spread。</p>
+</blockquote>
+<p><strong>HK 银行 USD→CNH spread 对比见 <a href="../forex-spread/#hk-银行-usdcnh-换汇-spread-对比">docs/forex-spread.md</a></strong>：HSBC HK 默认 60–80bp，Forex Club 42–56bp，RM 议价【传闻 USD 100k+】20–40bp；ZA Bank 20–50bp（小额首选）。结论：除非 HSBC RM 能给 ≤ 40bp，否则继续走 IBKR IdealPro 最划算。</p>
+<h3 id="23">2.3 换汇操作方式</h3>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>适用场景</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Currency Converter</strong></td>
+<td>小额 &lt; $25K</td>
+<td>Client Portal → Trade → Currency Conversion，市价单</td>
+</tr>
+<tr>
+<td><strong>IDEALPRO</strong></td>
+<td>大额 ≥ $25K（推荐）</td>
+<td>搜索 <code>USD.CNH</code> 或 <code>USD.HKD</code>，可挂限价单控制汇率</td>
+</tr>
+<tr>
+<td><strong>FXConv</strong></td>
+<td>任意金额</td>
+<td>TWS 交易平台，等同 Currency Converter</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-ibkr-us-vs-ibkr-hk">2.4 IBKR US vs IBKR HK</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>IBKR US (IBKR LLC)</th>
+<th>IBKR HK (IBKR HK Ltd)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>监管</td>
+<td>SEC / FINRA / SIPC</td>
+<td>香港 SFC</td>
+</tr>
+<tr>
+<td>多币种</td>
+<td>✅ USD/HKD/CNH/EUR/GBP 等</td>
+<td>✅ HKD/USD/CNH 等</td>
+</tr>
+<tr>
+<td>换汇</td>
+<td>✅ $2</td>
+<td>✅ $2</td>
+</tr>
+<tr>
+<td>提取 HKD/CNH 到 HSBC HK</td>
+<td>✅ SWIFT</td>
+<td>✅ SWIFT 或 FPS（即时）</td>
+</tr>
+<tr>
+<td>内部互转</td>
+<td>❌ 无法转到 IBKR HK</td>
+<td>❌ 无法转到 IBKR US</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论</strong>：两个实体完全独立，没有内部通道。IBKR US 已能完成全部操作，无需 IBKR HK。</p>
+<hr>
+<h2 id="_1">三、入金方式与冻结期</h2>
+<h3 id="31">3.1 各入金方式对比</h3>
+<table>
+<thead>
+<tr>
+<th>入金方式</th>
+<th>发起方</th>
+<th>冻结期</th>
+<th>费用</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HSBC US Domestic Wire → IBKR</td>
+<td>银行</td>
+<td><strong>~3 工作日</strong>（实测 4/2 入→4/7 可用）</td>
+<td><strong>$0（Premier 免费）</strong></td>
+<td>✅ <strong>推荐</strong></td>
+</tr>
+<tr>
+<td>KeyBank ACH Push → IBKR</td>
+<td>银行</td>
+<td>~4 天</td>
+<td>$0</td>
+<td>❌ 失败（账户名不匹配）</td>
+</tr>
+<tr>
+<td>IBKR 发起 ACH Pull ← 银行</td>
+<td>IBKR</td>
+<td><strong>44 个工作日</strong></td>
+<td>$0</td>
+<td>⚠️ 冻结太长</td>
+</tr>
+<tr>
+<td>Robinhood Wire → IBKR</td>
+<td>券商</td>
+<td>0 天</td>
+<td>$25</td>
+<td>✅ 可行但费 $25</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-keybank-ach-push">3.2 KeyBank ACH Push 失败原因</h3>
+<p>KeyBank 要求添加外部账户时，账户名必须与 KeyBank 账户持有人一致。但 IBKR 的 ACH 接收账户名是 "Interactive Brokers LLC" 而非个人名，KeyBank 拒绝添加。</p>
+<p><strong>解决方案</strong>：改走 HSBC US → IBKR US 的 Domestic Wire（Premier 免费）。</p>
+<h3 id="33-ibkr-180-origination">3.3 IBKR 180 天 Origination 规则</h3>
+<ul>
+<li>ACH Push 入金：180 天内只能提回原银行（可能限制提取到 HSBC HK）</li>
+<li><strong>Wire 入金：~3 工作日冻结</strong>（实测 4/2 入金→4/7 可提取）</li>
+<li>Wire 仍是最佳路径（无 180 天 origination 限制，冻结期远短于 ACH Pull 的 44 天）</li>
+</ul>
+<h3 id="34-ibkr">3.4 IBKR 账户维护注意</h3>
+<p>IBKR 可能关闭<strong>仅用于换汇</strong>的账户。建议：
+- 账户内保留一些投资（哪怕少量）
+- 或偶尔做一些交易
+- 不要完全当成换汇通道</p>
+<hr>
+<h2 id="_2">四、提现（出金）</h2>
+<h3 id="41-swift-hsbc-hk">4.1 SWIFT 电汇到 HSBC HK</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方式</td>
+<td>SWIFT 国际电汇</td>
+</tr>
+<tr>
+<td>支持币种</td>
+<td>HKD、CNH、USD 等</td>
+</tr>
+<tr>
+<td>费用</td>
+<td><strong>每月首次免费</strong>，第 2 次起 ~CNH 60 / HKD 95</td>
+</tr>
+<tr>
+<td>到账时间</td>
+<td>1-2 工作日</td>
+</tr>
+<tr>
+<td>HSBC HK 收款费</td>
+<td><strong>$0</strong>（Premier 免入账费）</td>
+</tr>
+<tr>
+<td>中间行费用</td>
+<td>视路由，$0-25</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-cnh-vs-hkd">4.2 CNH vs HKD 提取</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>USD→CNH 直转</th>
+<th>USD→HKD 中转</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IBKR 换汇</td>
+<td>$2</td>
+<td>$2</td>
+</tr>
+<tr>
+<td>提取到 HSBC HK</td>
+<td>直接到 RMB 账户</td>
+<td>到 HKD 账户</td>
+</tr>
+<tr>
+<td>二次换汇</td>
+<td><strong>不需要</strong></td>
+<td>需 HSBC HK 换 HKD→RMB（0.3-0.5%）</td>
+</tr>
+<tr>
+<td>总损耗（$50K）</td>
+<td><strong>$2（¥15）</strong></td>
+<td><strong>$150-250（¥1,100-1,800）</strong></td>
+</tr>
+<tr>
+<td>状态</td>
+<td>⚠️ 需确认 IBKR US 能否提取 CNH</td>
+<td>✅ 确定可行</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>待办</strong>：登录 IBKR Client Portal，尝试添加 HSBC HK 人民币账户作为 CNH 提款目标。</p>
+</blockquote>
+<hr>
+<h2 id="_3">五、全链路费用对比</h2>
+<h3 id="51-50000">5.1 各路径损耗对比（$50,000 为例）</h3>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>换汇成本</th>
+<th>转账成本</th>
+<th>总损耗</th>
+<th>损耗率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IBKR USD→CNH 直转</strong></td>
+<td>$2</td>
+<td>$0</td>
+<td><strong>$2</strong></td>
+<td><strong>0.004%</strong></td>
+</tr>
+<tr>
+<td>IBKR USD→HKD + HSBC 换 HKD→RMB</td>
+<td>$2</td>
+<td>$0</td>
+<td>~$200</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>HSBC 直接换汇（不经 IBKR）</td>
+<td>$150-500</td>
+<td>$0</td>
+<td>~$350</td>
+<td>0.7%</td>
+</tr>
+<tr>
+<td>Wise USD→CNY</td>
+<td>$401</td>
+<td>$0</td>
+<td>$401</td>
+<td>0.8%</td>
+</tr>
+<tr>
+<td>Moomoo 换汇</td>
+<td><strong>$1,500</strong></td>
+<td>$25</td>
+<td>$1,525</td>
+<td><strong>3.0%</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-ibkr-vs">5.2 IBKR vs 各渠道换汇成本</h3>
+<table>
+<thead>
+<tr>
+<th>渠道</th>
+<th>换 $10,000 的成本</th>
+<th>汇率类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IBKR</strong></td>
+<td><strong>$2</strong></td>
+<td>银行间汇率（interbank）</td>
+</tr>
+<tr>
+<td>Wise</td>
+<td>$81</td>
+<td>中间汇率 + 0.8% 手续费</td>
+</tr>
+<tr>
+<td>HSBC Premier</td>
+<td>$30-100</td>
+<td>自有汇率（加 0.3-1% spread）</td>
+</tr>
+<tr>
+<td>普通银行</td>
+<td>$100-300</td>
+<td>自有汇率（加 1-3% spread）</td>
+</tr>
+<tr>
+<td>Moomoo</td>
+<td><strong>$300</strong></td>
+<td>自有汇率（加 3% spread）</td>
+</tr>
+<tr>
+<td>AMEX 信用卡消费</td>
+<td>$200-250</td>
+<td>卡组织汇率 + 2-2.5% markup</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53">5.3 年消费净收益测算</h3>
+<p>以 Pulse 卡 4.4% 返现 + IBKR CNH 直转为例：</p>
+<table>
+<thead>
+<tr>
+<th>年消费额</th>
+<th>换汇+转账损耗</th>
+<th>4.4% 返现</th>
+<th><strong>年净收益</strong></th>
+<th>vs 运通方案差额</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>¥10 万</td>
+<td>¥15</td>
+<td>¥4,400</td>
+<td><strong>+¥4,385</strong></td>
+<td>比运通多赚 ¥6,785</td>
+</tr>
+<tr>
+<td>¥20 万</td>
+<td>¥30</td>
+<td>¥5,160</td>
+<td><strong>+¥5,130</strong></td>
+<td>比运通多赚 ¥10,130</td>
+</tr>
+<tr>
+<td>¥50 万</td>
+<td>¥75</td>
+<td>¥6,560</td>
+<td><strong>+¥6,485</strong></td>
+<td>比运通多赚 ¥19,485</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>返现上限：4.4% 适用于年消费 ~¥16 万以内（Reward+ 扫码），超出部分 0.4% 基础返现</p>
+</blockquote>
+<hr>
+<h2 id="hsbc-us">六、HSBC US 在链路中的关键作用</h2>
+<h3 id="61-hsbc-us">6.1 为什么必须经过 HSBC US</h3>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>直接到 IBKR</th>
+<th>经 HSBC US</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KeyBank → IBKR ACH Push</td>
+<td>❌ 账户名不匹配被拒</td>
+<td>不需要 KeyBank</td>
+</tr>
+<tr>
+<td>IBKR ACH Pull</td>
+<td>44 天冻结</td>
+<td>不需要 ACH Pull</td>
+</tr>
+<tr>
+<td>Wire 费用</td>
+<td>$25（Robinhood Wire）</td>
+<td><strong>$0（Premier 免费 Wire）</strong></td>
+</tr>
+<tr>
+<td>180 天 origination</td>
+<td>可能限制提取到 HSBC HK</td>
+<td>Wire 入金无此限制</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-hsbc-us">6.2 HSBC US 外币能力限制</h3>
+<table>
+<thead>
+<tr>
+<th>HSBC 实体</th>
+<th>外币储蓄账户</th>
+<th>能收外币电汇并保持原币</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HSBC HK</strong></td>
+<td>✅ 11+ 种货币</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>HSBC CN</strong></td>
+<td>✅ 多币种</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>HSBC UK</strong></td>
+<td>✅ 有外币账户</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>HSBC US</strong></td>
+<td>❌ 仅 USD 标准账户</td>
+<td>❌ 收到外币自动转 USD</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>HSBC US 只有 Global Money Account 能持有外币，但它是预付卡性质，<strong>不接受外部汇入</strong></li>
+<li>这是美国银行业普遍特征（Chase/BoA/Citi 同样不提供个人外币存款账户）</li>
+<li>所以<strong>换汇必须在 IBKR 完成</strong>，不能在 HSBC US 端做</li>
+</ul>
+<h3 id="63-premier">6.3 Premier 免费福利汇总</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>Premier</th>
+<th>非 Premier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>美国国内电汇（发出/接收）</td>
+<td><strong>免费</strong></td>
+<td>$25-35/笔</td>
+</tr>
+<tr>
+<td>国际电汇（发出/接收）</td>
+<td><strong>免费</strong></td>
+<td>$35-45/笔</td>
+</tr>
+<tr>
+<td>Global Transfer（US↔HK）</td>
+<td><strong>免费，即时</strong></td>
+<td>免费，即时</td>
+</tr>
+<tr>
+<td>每年节省（按月操作）</td>
+<td>-</td>
+<td>~$700-900</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="_4">七、替代方案对比</h2>
+<h3 id="71-wise">7.1 Wise（适合小额急用）</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>换汇</td>
+<td>中间汇率 + <strong>0.8% 手续费</strong></td>
+</tr>
+<tr>
+<td>$10K 成本</td>
+<td>~$81</td>
+</tr>
+<tr>
+<td>到账</td>
+<td><strong>1-3 天</strong>（最快当天）</td>
+</tr>
+<tr>
+<td>支持</td>
+<td>汇到内地银行/支付宝/微信</td>
+</tr>
+<tr>
+<td>每笔上限</td>
+<td>¥50,000</td>
+</tr>
+<tr>
+<td>优势</td>
+<td>操作极简，速度快</td>
+</tr>
+<tr>
+<td>劣势</td>
+<td>0.8% 比 IBKR 贵 40 倍，无消费返现</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-moomoo-us">7.2 Moomoo US（不推荐换汇）</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>换汇</td>
+<td><strong>高达 3% spread</strong>（300bps）</td>
+</tr>
+<tr>
+<td>$10K 成本</td>
+<td><strong>~$300</strong></td>
+</tr>
+<tr>
+<td>Cash Sweep 利率</td>
+<td>3.35% APY（FDIC 保险）</td>
+</tr>
+<tr>
+<td>定位</td>
+<td>理财用（Cash Sweep），<strong>绝对不要用来换汇</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-za-bank-hkid">7.3 众安银行 ZA Bank（需要 HKID）</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>详情</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Payment Connect</td>
+<td>实时跨境转账 HKD↔RMB</td>
+</tr>
+<tr>
+<td>换汇 spread</td>
+<td>较低（~0.1-0.3%）</td>
+</tr>
+<tr>
+<td>门槛</td>
+<td><strong>需要香港身份证 (HKID)</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="74">7.4 推荐组合</h3>
+<pre><code>主力（大额）: IBKR 换汇 → HSBC Pulse 消费（净赚 4.4%）
+补充（急用）: Wise 汇款到内地银行（0.8% 便利费，1-3 天到账）
+小额（日常）: 运通微信 ≤200 元（已有现成的）
+理财闲置:    Moomoo Cash Sweep 3.35% / Robinhood Savings 4.25%
+</code></pre>
+<hr>
+<h2 id="_5">八、操作步骤清单</h2>
+<h3 id="81-2-3">8.1 一次性设置（约 2-3 周）</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>步骤</th>
+<th>预计时间</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>开通 HSBC US 账户（通过 Premier 全球通）</td>
+<td>1-2 周</td>
+<td>✅ 已完成</td>
+</tr>
+<tr>
+<td>2</td>
+<td>开通 HSBC HK 账户 + Global Transfer 验证</td>
+<td>1-2 周</td>
+<td>✅ 已完成，无损</td>
+</tr>
+<tr>
+<td>3</td>
+<td>开通 IBKR US 账户</td>
+<td>1 周</td>
+<td>✅ 已开户</td>
+</tr>
+<tr>
+<td>4</td>
+<td>开通 Pulse 卡</td>
+<td>-</td>
+<td>✅ 已开通</td>
+</tr>
+<tr>
+<td>5</td>
+<td>在 HSBC US 网银添加 IBKR US 为 Wire 收款方</td>
+<td>1-2 天</td>
+<td>⬜</td>
+</tr>
+<tr>
+<td>6</td>
+<td>在 IBKR Client Portal 添加 HSBC HK 为 CNH/HKD 提款目标</td>
+<td>1-2 天</td>
+<td>⬜</td>
+</tr>
+<tr>
+<td>7</td>
+<td>测试全链路（Wire → 换汇 → 提取）</td>
+<td>即时</td>
+<td>⬜ 关键确认点</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82">8.2 每月操作流程</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>步骤</th>
+<th>操作</th>
+<th>耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Robinhood → HSBC US</td>
+<td>ACH 提现</td>
+<td>3-5 天</td>
+</tr>
+<tr>
+<td>2</td>
+<td>HSBC US → IBKR US</td>
+<td>Domestic Wire</td>
+<td>当天/次日</td>
+</tr>
+<tr>
+<td>3</td>
+<td>IBKR 换汇</td>
+<td>USD→CNH（IDEALPRO 限价单）</td>
+<td>T+1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>IBKR → HSBC HK</td>
+<td>SWIFT 提取 CNH（或 HKD）</td>
+<td>1-2 天</td>
+</tr>
+<tr>
+<td>5</td>
+<td>HSBC HK 还款</td>
+<td>AutoPay 还 Pulse 卡</td>
+<td>自动</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>总计</strong></td>
+<td></td>
+<td><strong>~6-9 工作日</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>待办事项已统一至 <a href="../README/#待办">README.md</a></p>
+</blockquote>
+</article>
+</div>
+</body>
+</html>

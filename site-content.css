@@ -1,0 +1,164 @@
+/* tianlizeng.cloud 站群统一站内样式 (SSOT)
+ * 来源：~/Dev/devtools/lib/templates/site-content.css
+ * 编辑这里 → /site-content-refresh 同步到所有消费者站
+ * 视觉对标：services 页 (~/Dev/website/components/service-dashboard.tsx)
+ */
+
+/* ===== 页面骨架 ===== */
+body.tlz-page {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin: 0;
+}
+
+.tlz-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+@media (min-width: 768px) {
+  .tlz-container { padding: 0 32px 48px; }
+}
+
+/* ===== Stats bar（统计条，site-header 之下）===== */
+.tlz-stats-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 16px;
+  margin: 24px 0 32px;
+  font-size: 14px; color: #86868b;
+}
+.tlz-stats-bar > * { display: inline-flex; align-items: center; gap: 6px; }
+.tlz-stats-bar strong { color: #1d1d1f; font-weight: 500; }
+
+/* ===== Search box ===== */
+.tlz-search-wrap {
+  position: relative;
+  width: 100%; max-width: 448px;
+  margin: 0 auto 32px;
+}
+.tlz-search {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 16px 10px 40px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px;
+  font: 14px/1.4 inherit;
+  color: #1d1d1f; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tlz-search:focus {
+  border-color: rgba(0,113,227,0.3);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.20);
+}
+.tlz-search::placeholder { color: rgba(134,134,139,0.6); }
+
+/* ===== Filter buttons ===== */
+.tlz-filters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.tlz-btn {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 999px;
+  font: 13px/1 inherit; color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tlz-btn:hover { background: rgba(255,255,255,0.7); color: #1d1d1f; }
+.tlz-btn.active { background: #1f2328; color: #fff; border-color: #1f2328; }
+
+/* ===== Section（一个分组）===== */
+.tlz-section { margin-bottom: 40px; }
+.tlz-section-title {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+  font-size: 18px; font-weight: 600; color: #1d1d1f;
+}
+.tlz-section-title .tlz-icon { font-size: 20px; line-height: 1; }
+.tlz-section-title .tlz-count { font-size: 12px; color: #86868b; font-weight: 400; margin-left: 4px; }
+
+/* ===== Grid ===== */
+.tlz-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+@media (min-width: 768px) {
+  .tlz-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== Card（玻璃卡片，所有 list item 都用这个）===== */
+.tlz-card {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-decoration: none; color: inherit;
+  transition: all 0.2s;
+}
+.tlz-card:hover {
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.tlz-card-body { min-width: 0; flex: 1; }
+.tlz-card-header { display: flex; align-items: center; gap: 8px; }
+.tlz-card-name {
+  font-size: 14px; font-weight: 500; color: #1d1d1f;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tlz-card-meta {
+  font-size: 10px; color: #86868b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  flex-shrink: 0;
+}
+.tlz-card-desc {
+  font-size: 12px; color: #86868b;
+  margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tlz-card-tail { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Card 行式变体（logs 时间线用）*/
+.tlz-card--row .tlz-card-body { display: grid; grid-template-columns: 100px 1fr; gap: 12px; align-items: baseline; }
+.tlz-card--row .tlz-card-meta { font-size: 12px; }
+
+/* ===== Status dot ===== */
+.tlz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.tlz-dot--ok { background: #34c759; }
+.tlz-dot--bad { background: #ff3b30; }
+.tlz-dot--warn { background: #ff9500; }
+.tlz-dot--unknown { background: #d2d2d7; }
+
+/* ===== Tag chip ===== */
+.tlz-tag {
+  display: inline-block;
+  background: rgba(0,0,0,0.06); color: #495057;
+  font-size: 10px; font-weight: 500;
+  padding: 1px 7px; border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* ===== Lock icon (CF Access 标识) ===== */
+.tlz-lock {
+  display: inline-block; width: 12px; height: 12px;
+  vertical-align: middle; opacity: 0.5;
+}
+
+/* ===== Footer ===== */
+.tlz-footer {
+  text-align: center; color: #86868b; font-size: 12px;
+  margin-top: 48px; padding: 24px 0;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.tlz-footer a { color: #0071e3; text-decoration: none; }
+.tlz-footer a:hover { text-decoration: underline; }
+
+/* ===== Hidden helper ===== */
+.tlz-hidden { display: none !important; }
