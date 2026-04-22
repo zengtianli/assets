@@ -4,7 +4,7 @@
 
 ## 仓库性质
 
-- **内容源**：`~/Dev/international-assets/docs/*.md`（private repo）
+- **内容源**：`~/Dev/content/investment/docs/*.md`（private repo）
 - **过滤规则**：frontmatter `public: true` 才被渲染。防误泄 PII
 - **产物**：`site/index.html` + `site/<slug>/index.html` 静态 HTML
 - **部署**：VPS `/var/www/assets` (nginx)
@@ -31,7 +31,7 @@ cd ~/Dev/assets && python3 generate.py && open site/index.html
 bash deploy.sh
 
 # 新增一篇公开文
-# 1. 在 ~/Dev/international-assets/docs/<slug>.md 顶部加 frontmatter：
+# 1. 在 ~/Dev/content/investment/docs/<slug>.md 顶部加 frontmatter：
 #    ---
 #    public: true
 #    title: 文章标题
@@ -49,5 +49,5 @@ bash deploy.sh
 ## SSOT
 
 - 分组 key（forex / invest / hk-bank / strategy）与首页分组标题在本 repo `generate.py` 定义
-- navbar 入口在 `~/Dev/configs/menus/navbar.yaml` → content / 投资 section
+- navbar 入口在 `~/Dev/tools/configs/menus/navbar.yaml` → content / 投资 section
 - 子域登记在 `~/Dev/website/lib/services.ts` → "内容" group

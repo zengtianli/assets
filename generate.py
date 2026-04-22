@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """assets — 理财笔记公开版静态站生成器。
 
-跨仓读 ~/Dev/international-assets/docs/*.md，只渲染带 frontmatter `public: true` 的文章。
+跨仓读 ~/Dev/content/investment/docs/*.md，只渲染带 frontmatter `public: true` 的文章。
 产物：
   site/index.html           — 首页（4 分组卡片）
   site/<slug>/index.html    — 单篇文章页
@@ -28,7 +28,7 @@ except ImportError:
 
 
 SCRIPT_DIR = Path(__file__).parent
-DOCS_DIR = Path.home() / "Dev" / "international-assets" / "docs"
+DOCS_DIR = Path.home() / "Dev" / "content" / "investment" / "docs"
 SITE_DIR = SCRIPT_DIR / "site"
 
 GROUPS = [
