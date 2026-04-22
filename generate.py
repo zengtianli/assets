@@ -39,14 +39,14 @@ GROUPS = [
 ]
 
 
-def _load(name: str) -> str:
-    p = SCRIPT_DIR / name
-    return p.read_text(encoding="utf-8") if p.exists() else ""
+# Shared template loader — local override > devtools/lib/templates/
+sys.path.insert(0, str(Path.home() / "Dev" / "devtools" / "lib"))
+from site_templates import load_site_templates  # noqa: E402
 
-
-NAVBAR_HTML = _load("site-navbar.html")
-SITE_HEADER_HTML = _load("site-header.html")
-SITE_CONTENT_CSS = _load("site-content.css")
+_TPL = load_site_templates(SCRIPT_DIR)
+NAVBAR_HTML = _TPL["navbar"]
+SITE_HEADER_HTML = _TPL["header"]
+SITE_CONTENT_CSS = _TPL["css"]
 
 
 def esc(s) -> str:
